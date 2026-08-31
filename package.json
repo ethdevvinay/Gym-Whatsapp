@@ -5,7 +5,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "build": "echo 'No build required'",
+    "build": "node -e \"import('fs').then(fs => fs.mkdirSync('dist', {recursive: true}))\"",
     "start": "node server.js",
     "dev": "node --watch server.js"
   },
