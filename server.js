@@ -124,6 +124,11 @@ function generateAntiBanRef() {
 
 // ---------------- REST API ROUTES ----------------
 
+// Root route -> redirect to Health Dashboard
+app.get('/', (req, res) => {
+  res.redirect('/health');
+});
+
 // 1. Connection Status
 app.get('/status', (req, res) => {
   res.json({
