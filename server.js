@@ -19,8 +19,8 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 const AUTH_DIR = path.join(__dirname, 'auth_info');
 
@@ -201,18 +201,18 @@ app.post('/send', async (req, res) => {
     // 🛡️ ANTI-BAN HUMAN SIMULATION PROTOCOL:
     try {
       // 1. Subscribe to recipient presence
-      await sock.presenceSubscribe(jid).catch(() => {});
-      await sock.sendPresenceUpdate('available').catch(() => {});
-      
+      await sock.presenceSubscribe(jid).catch(() => { });
+      await sock.sendPresenceUpdate('available').catch(() => { });
+
       // 2. Simulate Realistic Typing Status
-      await sock.sendPresenceUpdate('composing', jid).catch(() => {});
-      
+      await sock.sendPresenceUpdate('composing', jid).catch(() => { });
+
       // Dynamic typing delay based on message length (1.2s to 3.0s for transactional; 8s to 18s if bulk)
       const typingTime = is_bulk ? getRandomDelay(4000, 9000) : getRandomDelay(1200, 2600);
       await sleep(typingTime);
-      
+
       // 3. Pause typing right before dispatch
-      await sock.sendPresenceUpdate('paused', jid).catch(() => {});
+      await sock.sendPresenceUpdate('paused', jid).catch(() => { });
     } catch (presenceErr) {
       // Ignore presence simulation errors on edge networks
     }
@@ -226,7 +226,7 @@ app.post('/send', async (req, res) => {
     const result = await sock.sendMessage(jid, { text: finalMessage });
 
     console.log(`[WhatsApp Anti-Ban Gateway] Message delivered safely to: ${cleanPhone} (Ref: ${result.key.id})`);
-    
+
     // Cooldown jitter for safety
     if (is_bulk) {
       const cooldown = getRandomDelay(6000, 14000);
@@ -254,12 +254,12 @@ app.post('/send', async (req, res) => {
 // 3B. Send WhatsApp Document (PDF Invoice) with Anti-Ban Protection
 app.post('/send-document', async (req, res) => {
   try {
-    const { phone, file_path, file_name, caption } = req.body;
+    const { phone, file_path, file_name, file_base64, caption } = req.body;
 
-    if (!phone || !file_path) {
+    if (!phone || (!file_path && !file_base64)) {
       return res.status(400).json({
         success: false,
-        error: 'Phone number and file_path are required'
+        error: 'Phone number and either file_path or file_base64 are required'
       });
     }
 
@@ -270,12 +270,26 @@ app.post('/send-document', async (req, res) => {
       });
     }
 
-    // Verify file exists
-    if (!fs.existsSync(file_path)) {
-      return res.status(404).json({
-        success: false,
-        error: `PDF file not found at: ${file_path}`
-      });
+    let fileBuffer;
+    let docFileName = file_name || 'receipt.pdf';
+
+    if (file_base64) {
+      fileBuffer = Buffer.from(file_base64, 'base64');
+    } else if (file_path) {
+      if (!fs.existsSync(file_path)) {
+        return res.status(404).json({
+          success: false,
+          error: `PDF file not found at: ${file_path}`
+        });
+      }
+      fileBuffer = fs.readFileSync(file_path);
+      docFileName = file_name || path.basename(file_path);
+    }
+
+    // Add anti-hash token to caption
+    let finalCaption = caption || `📄 Official Fee Receipt - THE CLUB 777®`;
+    if (!finalCaption.includes('Ref: #777-')) {
+      finalCaption += `\n\n_Ref: ${generateAntiBanRef()}_`;
     }
 
     let cleanPhone = String(phone).replace(/[^0-9]/g, '');
@@ -287,23 +301,13 @@ app.post('/send-document', async (req, res) => {
 
     // 🛡️ ANTI-BAN HUMAN SIMULATION FOR DOCUMENTS
     try {
-      await sock.presenceSubscribe(jid).catch(() => {});
-      await sock.sendPresenceUpdate('available').catch(() => {});
-      await sock.sendPresenceUpdate('composing', jid).catch(() => {});
+      await sock.presenceSubscribe(jid).catch(() => { });
+      await sock.sendPresenceUpdate('available').catch(() => { });
+      await sock.sendPresenceUpdate('composing', jid).catch(() => { });
       await sleep(getRandomDelay(1500, 3000));
-      await sock.sendPresenceUpdate('paused', jid).catch(() => {});
+      await sock.sendPresenceUpdate('paused', jid).catch(() => { });
     } catch (presenceErr) {
       // Ignore presence errors
-    }
-
-    // Read PDF file buffer
-    const fileBuffer = fs.readFileSync(file_path);
-    const docFileName = file_name || path.basename(file_path);
-
-    // Add anti-hash token to caption
-    let finalCaption = caption || `📄 Official Fee Receipt - THE CLUB 777®`;
-    if (!finalCaption.includes('Ref: #777-')) {
-      finalCaption += `\n\n_Ref: ${generateAntiBanRef()}_`;
     }
 
     // Send as document
@@ -339,7 +343,7 @@ app.post('/send-document', async (req, res) => {
 app.post('/logout', async (req, res) => {
   try {
     if (sock) {
-      await sock.logout().catch(() => {});
+      await sock.logout().catch(() => { });
     }
     if (fs.existsSync(AUTH_DIR)) {
       fs.rmSync(AUTH_DIR, { recursive: true, force: true });
@@ -420,7 +424,7 @@ app.get('/health', (req, res) => {
     .btn-primary{background:#7C3AED22;color:#A78BFA;border:1px solid #7C3AED44}
     .btn-green{background:#10B98122;color:#10B981;border:1px solid #10B98144}
     .footer{color:#334155;font-size:.7rem;margin-top:1.25rem}
-    .dot{width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;margin-right:6px;${connectionState==='connected'?'animation:pulse 1.5s ease infinite':''}}
+    .dot{width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;margin-right:6px;${connectionState === 'connected' ? 'animation:pulse 1.5s ease infinite' : ''}}
     @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
     @keyframes spin{to{transform:rotate(360deg)}}
   </style>
@@ -439,7 +443,7 @@ app.get('/health', (req, res) => {
     <div class="stat"><div class="stat-label">Port</div><div class="stat-value">🔌 ${PORT}</div></div>
     <div class="stat"><div class="stat-label">Reconnect Attempts</div><div class="stat-value">🔄 ${reconnectAttempts}</div></div>
     <div class="stat"><div class="stat-label">Anti-Ban</div><div class="stat-value" style="color:#10B981">🛡️ ACTIVE</div></div>
-    <div class="stat" style="grid-column:1/-1"><div class="stat-label">Server Time</div><div class="stat-value">🕐 ${new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata',hour12:true})}</div></div>
+    <div class="stat" style="grid-column:1/-1"><div class="stat-label">Server Time</div><div class="stat-value">🕐 ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true })}</div></div>
   </div>
 
   <div>
