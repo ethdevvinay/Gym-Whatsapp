@@ -1,0 +1,26 @@
+{
+  "name": "fitzone-whatsapp-gateway",
+  "version": "1.0.0",
+  "description": "Node.js WhatsApp Multi-Device Gateway for FITZONE Gym Management System",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.13",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "pino": "^9.6.0",
+    "qrcode": "^1.5.4"
+  },
+  "keywords": [
+    "whatsapp",
+    "baileys",
+    "gym-management",
+    "gateway"
+  ],
+  "author": "FITZONE",
+  "license": "ISC"
+}
