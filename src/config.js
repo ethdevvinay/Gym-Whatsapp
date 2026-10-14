@@ -9,7 +9,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 export const config = {
   port: parseInt(process.env.PORT || '3001', 10),
-  host: process.env.HOST || '127.0.0.1',
+  host: process.env.HOST || '0.0.0.0',
 
   db: {
     host: process.env.DB_HOST || '127.0.0.1',
