@@ -1,5 +1,0 @@
-# Ignore sensitive and large files
-node_modules/
-auth_info/
-.env
-*.log
