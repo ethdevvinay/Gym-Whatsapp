@@ -30,9 +30,23 @@ export const config = {
   schedulerIntervalMinutes: parseInt(process.env.SCHEDULER_INTERVAL_MINUTES || '60', 10),
   queuePollIntervalSeconds: parseInt(process.env.QUEUE_POLL_INTERVAL_SECONDS || '10', 10),
 
-  dispatchDelayMinMs: parseInt(process.env.DISPATCH_DELAY_MIN_MS || '8000', 10),
-  dispatchDelayMaxMs: parseInt(process.env.DISPATCH_DELAY_MAX_MS || '15000', 10),
+  dispatchDelayMinMs: parseInt(process.env.DISPATCH_DELAY_MIN_MS || '10000', 10),
+  dispatchDelayMaxMs: parseInt(process.env.DISPATCH_DELAY_MAX_MS || '22000', 10),
   maxRetryAttempts: parseInt(process.env.MAX_RETRY_ATTEMPTS || '3', 10),
+
+  // 100% Anti-Ban & Human Emulation Safety Shield
+  antiBan: {
+    enabled: process.env.ANTI_BAN_SHIELD !== 'false',
+    humanTypingSimulation: process.env.HUMAN_TYPING_SIMULATION !== 'false',
+    minTypingDelayMs: parseInt(process.env.MIN_TYPING_DELAY_MS || '1500', 10),
+    maxTypingDelayMs: parseInt(process.env.MAX_TYPING_DELAY_MS || '3500', 10),
+    directSendCooldownMs: parseInt(process.env.DIRECT_SEND_COOLDOWN_MS || '3000', 10),
+    hourlyLimit: parseInt(process.env.HOURLY_DISPATCH_LIMIT || '45', 10),
+    dailyLimit: parseInt(process.env.DAILY_DISPATCH_LIMIT || '300', 10),
+    quietHoursEnabled: process.env.QUIET_HOURS_ENABLED !== 'false',
+    quietHoursStartHour: 21.5, // 9:30 PM IST
+    quietHoursEndHour: 8.5      // 8:30 AM IST
+  },
 
   logLevel: process.env.LOG_LEVEL || 'info',
   authDir: path.resolve(__dirname, '../auth_info')

@@ -38,6 +38,15 @@ async function bootstrap() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+  // Gracefully handle malformed JSON payload errors from clients
+  app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+      logger.warn({ ip: req.ip, path: req.path }, '[HTTP] Malformed JSON payload received');
+      return res.status(400).json({ success: false, error: 'Malformed JSON payload' });
+    }
+    next(err);
+  });
+
   // Mount API router
   app.use('/', createApiRouter());
 

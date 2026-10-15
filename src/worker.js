@@ -104,9 +104,24 @@ export class ReminderWorker {
     }
   }
 
+  isQuietHours() {
+    if (!config.antiBan.quietHoursEnabled) return false;
+    const now = new Date();
+    // Convert to IST (+5.5 hours)
+    const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+    const istHour = istTime.getUTCHours() + (istTime.getUTCMinutes() / 60);
+    return (istHour >= config.antiBan.quietHoursStartHour || istHour < config.antiBan.quietHoursEndHour);
+  }
+
   async processNextBatch() {
     if (this.isProcessingQueue) return;
     this.isProcessingQueue = true;
+
+    if (this.isQuietHours()) {
+      logger.info('[Anti-Ban Worker] Quiet Hours active (9:30 PM - 8:30 AM IST). Pausing reminder queue to avoid customer spam reports.');
+      this.isProcessingQueue = false;
+      return;
+    }
 
     try {
       const pendingJobs = await QueueManager.fetchPendingJobs(3);

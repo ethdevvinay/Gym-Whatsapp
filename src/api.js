@@ -73,6 +73,15 @@ export function createApiRouter() {
           experimentalDispatchEnabled: config.experimentalDispatchEnabled,
           timezone: config.timezone
         },
+        antiBan: {
+          enabled: Boolean(config.antiBan?.enabled),
+          humanTypingSimulation: Boolean(config.antiBan?.humanTypingSimulation),
+          hourlyLimit: config.antiBan?.hourlyLimit || 45,
+          dailyLimit: config.antiBan?.dailyLimit || 300,
+          hourlySent: transport.hourlySendCount || 0,
+          dailySent: transport.dailySendCount || 0,
+          quietHoursEnabled: Boolean(config.antiBan?.quietHoursEnabled)
+        },
         system: {
           uptimeSeconds: Math.round(process.uptime()),
           memoryRssMb: Math.round((mem.rss / 1024 / 1024) * 10) / 10,
@@ -244,7 +253,43 @@ export function createApiRouter() {
     }
   });
 
-  // 11. Disconnect / Session Reset
+  // 11. Send Document (POS Receipts / PDF Invoices)
+  router.post('/send-document', async (req, res) => {
+    try {
+      const { phone, caption, file_name, file_base64, file_path } = req.body;
+      if (!phone) {
+        return res.status(400).json({ success: false, error: 'Phone number is required' });
+      }
+
+      const result = await transport.sendDocument({
+        phone,
+        caption,
+        file_name,
+        file_base64,
+        file_path
+      });
+
+      if (result.success) {
+        res.json({
+          success: true,
+          message_id: result.wamid,
+          is_dry_run: result.isDryRun,
+          status: 'submitted'
+        });
+      } else {
+        res.status(503).json({
+          success: false,
+          error: result.error,
+          errorCategory: result.errorCategory
+        });
+      }
+    } catch (err) {
+      logger.error({ err: err.message }, '[API] Send Document Error');
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // 12. Disconnect / Session Reset
   router.post('/logout', async (req, res) => {
     const result = await transport.logout();
     res.json(result);
