@@ -81,7 +81,7 @@ export async function runReminderScan(options = {}) {
           m.phone,
           m.whatsapp_no,
           m.whatsapp_opt_out,
-          mt.plan_title
+          mt.title as plan_title
         FROM member_subscriptions ms
         JOIN members m ON ms.member_id = m.id
         LEFT JOIN membership_types mt ON ms.membership_type_id = mt.id
